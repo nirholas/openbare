@@ -6,47 +6,19 @@ This guide covers all the ways to deploy your own OpenBare node.
 
 | Method | Best For | Difficulty | Cost |
 |--------|----------|------------|------|
-| [Vercel](#vercel) | Quick setup | Easy | Free |
-| [Cloudflare Workers](#cloudflare-workers) | Global performance | Easy | Free |
-| [Railway](#railway) | Docker, databases | Easy | Free tier |
+| [Cloudflare Workers](#cloudflare-workers) ⭐ | Global performance, WebSockets | Easy | Free |
+| [Render](#render) | Persistent servers | Easy | Free tier |
+| [Fly.io](#flyio) | Global, WebSockets | Easy | Free tier |
 | [Docker](#docker) | Self-hosted | Medium | Your server |
 | [Manual](#manual-installation) | Full control | Medium | Your server |
 
----
-
-## Vercel
-
-### One-Click Deploy
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/nirholas/openbare/tree/main/server)
-
-### Manual Deploy
-
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Clone and deploy
-git clone https://github.com/nirholas/openbare.git
-cd openbare/server
-vercel
-```
-
-### Environment Variables
-
-Set these in Vercel dashboard:
-
-```
-NODE_ID=vercel-node-1
-REGION=us-east
-REGISTRY_URL=https://registry.openbare.dev
-```
+> ⚠️ **Note:** Vercel (serverless limitations) and Railway (banned dependencies) don't work well for proxy servers.
 
 ---
 
 ## Cloudflare Workers
 
-Best for global performance with <50ms latency worldwide.
+**Recommended!** Best for global performance with <50ms latency worldwide and WebSocket support.
 
 ### Deploy
 

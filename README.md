@@ -18,7 +18,7 @@
 
 ## ✨ Features
 
-- 👀 **Instant Setup** - One-click deploy to Vercel, Railway, or Cloudflare
+- 👀 **Instant Setup** - Deploy to Cloudflare Workers in 30 seconds
 - 🌍 **Decentralized** - Community-run nodes across the globe
 - ⚡ **Edge Performance** - Cloudflare Workers for <50ms latency worldwide
 - 🔄 **Automatic Failover** - Client seamlessly switches between nodes
@@ -103,17 +103,20 @@ npm start
 
 ## 🌐 Deploy Your Own Node
 
-### One-Click Deploy
+### Recommended: Cloudflare Workers
 
 | Platform | Deploy | Best For |
 |----------|--------|----------|
-| **Vercel** | [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/nirholas/openbare/tree/main/server) | Easy setup, free tier |
-| **Railway** | [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/openbare) | Docker support, databases |
-| **Cloudflare** | [Deploy to Workers →](#cloudflare-workers) | Global edge, lowest latency |
+| **Cloudflare Workers** ⭐ | [Deploy to Workers →](#cloudflare-workers) | Global edge, WebSocket support, free tier |
+| **Render** | [render.com](https://render.com) | Persistent servers, easy setup |
+| **Fly.io** | [fly.io](https://fly.io) | Global, WebSocket support |
+| **Self-hosted** | [Docker →](#docker) | Full control |
 
-### Cloudflare Workers (Edge)
+> ⚠️ **Note:** Vercel and Railway don't work well for proxy servers (serverless limitations / banned dependencies).
 
-Deploy to 300+ locations worldwide:
+### Cloudflare Workers (Recommended)
+
+Deploy to 300+ edge locations worldwide with WebSocket support:
 
 ```bash
 cd edge
@@ -121,6 +124,10 @@ npm install
 npx wrangler login
 npx wrangler deploy
 ```
+
+You'll get a URL like: `https://openbare-edge.YOUR_SUBDOMAIN.workers.dev`
+
+**Live Example:** `https://openbare.xyz`
 
 ### Docker
 
