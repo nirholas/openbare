@@ -72,6 +72,20 @@ describe('Codec Module', () => {
       };
       const encoded = codec.encodeHeaders(original);
       const decoded = codec.decodeHeaders(encoded);
+      // Headers are normalized to lowercase by the codec
+      assert.deepStrictEqual(decoded, {
+        'content-type': 'application/json',
+        'accept': 'text/html'
+      });
+    });
+
+    it('should handle round-trip with lowercase keys', () => {
+      const original = {
+        'content-type': 'text/plain',
+        'x-custom-header': 'value'
+      };
+      const encoded = codec.encodeHeaders(original);
+      const decoded = codec.decodeHeaders(encoded);
       assert.deepStrictEqual(decoded, original);
     });
   });

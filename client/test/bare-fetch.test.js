@@ -13,9 +13,9 @@ describe('BareError', () => {
       assert.strictEqual(error.message, 'Test error');
     });
 
-    it('should create error with status', () => {
-      const error = new BareError('Not found', 404);
-      assert.strictEqual(error.status, 404);
+    it('should create error with code', () => {
+      const error = new BareError('Not found', 'NOT_FOUND');
+      assert.strictEqual(error.code, 'NOT_FOUND');
     });
 
     it('should be instance of Error', () => {
@@ -37,5 +37,10 @@ describe('bareFetch', () => {
   it('should export bareFetch function', async () => {
     const { bareFetch } = await import('../src/bare-fetch.js');
     assert.ok(typeof bareFetch === 'function');
+  });
+
+  it('should export testBareServer function', async () => {
+    const { testBareServer } = await import('../src/bare-fetch.js');
+    assert.ok(typeof testBareServer === 'function');
   });
 });

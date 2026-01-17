@@ -1,88 +1,100 @@
 /**
  * Registry Database Tests
+ * 
+ * Note: These tests require better-sqlite3 which may not compile on all Node versions.
+ * They are designed to run in CI with Node 20.
  */
 
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert');
-const fs = require('fs');
 const path = require('path');
 
-// Test with in-memory database
-process.env.DATABASE_PATH = ':memory:';
+// Use in-memory database for tests
+process.env.DB_PATH = ':memory:';
 
 describe('Database Module', () => {
   let db;
 
-  beforeEach(async () => {
-    // Fresh import for each test
-    delete require.cache[require.resolve('../db.js')];
+  beforeEach(() => {
+    // Clear require cache for fresh import
+    const dbPath = require.resolve('../db.js');
+    delete require.cache[dbPath];
     db = require('../db.js');
-    await db.initialize();
+    db.initialize();
+  });
+
+  afterEach(() => {
+    if (db) {
+      db.close();
+    }
   });
 
   describe('initialize', () => {
-    it('should create database successfully', async () => {
-      assert.ok(db);
+    it('should create database successfully', () => {
+      assert.ok(db.getDb());
     });
   });
 
   describe('registerNode', () => {
-    it('should register a new node', () => {
-      const node = {
+    it('should register a new node and return row id', () => {
+      const id = db.registerNode({
         url: 'https://bare1.example.com',
-        nodeId: 'test-node-1',
         region: 'us-east',
-        owner: 'test@example.com',
-        version: '1.0.0'
-      };
-      
-      const result = db.registerNode(node);
-      assert.ok(result);
-      assert.strictEqual(result.id, 'test-node-1');
+        owner: 'test@example.com'
+      });
+      assert.ok(id);
+      assert.ok(typeof id === 'number' || typeof id === 'bigint');
     });
 
-    it('should update existing node on re-registration', () => {
-      const node = {
-        url: 'https://bare1.example.com',
-        nodeId: 'test-node-1',
-        region: 'us-east',
-        version: '1.0.0'
-      };
-      
-      db.registerNode(node);
-      node.region = 'eu-west';
-      const result = db.registerNode(node);
-      
-      assert.strictEqual(result.region, 'eu-west');
+    it('should register node with optional contact', () => {
+      const id = db.registerNode({
+        url: 'https://bare2.example.com',
+        region: 'eu-west',
+        owner: 'admin@example.com',
+        contact: 'support@example.com'
+      });
+      assert.ok(id);
     });
   });
 
-  describe('getNode', () => {
-    it('should retrieve registered node', () => {
-      const node = {
+  describe('getNodeById', () => {
+    it('should retrieve registered node by id', () => {
+      const id = db.registerNode({
         url: 'https://bare1.example.com',
-        nodeId: 'test-node-1',
         region: 'us-east',
-        version: '1.0.0'
-      };
+        owner: 'test@example.com'
+      });
       
-      db.registerNode(node);
-      const retrieved = db.getNode('test-node-1');
-      
-      assert.ok(retrieved);
-      assert.strictEqual(retrieved.url, node.url);
+      const node = db.getNodeById(id);
+      assert.ok(node);
+      assert.strictEqual(node.url, 'https://bare1.example.com');
+      assert.strictEqual(node.region, 'us-east');
     });
 
-    it('should return null for non-existent node', () => {
-      const result = db.getNode('non-existent');
-      assert.strictEqual(result, null);
+    it('should return undefined for non-existent node', () => {
+      const result = db.getNodeById(99999);
+      assert.strictEqual(result, undefined);
+    });
+  });
+
+  describe('getNodeByUrl', () => {
+    it('should retrieve node by URL', () => {
+      db.registerNode({
+        url: 'https://bare1.example.com',
+        region: 'us-east',
+        owner: 'test@example.com'
+      });
+      
+      const node = db.getNodeByUrl('https://bare1.example.com');
+      assert.ok(node);
+      assert.strictEqual(node.url, 'https://bare1.example.com');
     });
   });
 
   describe('getAllNodes', () => {
     it('should return all registered nodes', () => {
-      db.registerNode({ url: 'https://bare1.example.com', nodeId: 'node-1', region: 'us-east', version: '1.0.0' });
-      db.registerNode({ url: 'https://bare2.example.com', nodeId: 'node-2', region: 'eu-west', version: '1.0.0' });
+      db.registerNode({ url: 'https://bare1.example.com', region: 'us-east', owner: 'test1@example.com' });
+      db.registerNode({ url: 'https://bare2.example.com', region: 'eu-west', owner: 'test2@example.com' });
       
       const nodes = db.getAllNodes();
       assert.strictEqual(nodes.length, 2);
@@ -97,72 +109,133 @@ describe('Database Module', () => {
 
   describe('getHealthyNodes', () => {
     it('should return only healthy nodes', () => {
-      db.registerNode({ url: 'https://bare1.example.com', nodeId: 'node-1', region: 'us-east', version: '1.0.0' });
-      db.registerNode({ url: 'https://bare2.example.com', nodeId: 'node-2', region: 'eu-west', version: '1.0.0' });
+      const id1 = db.registerNode({ url: 'https://bare1.example.com', region: 'us-east', owner: 'test@example.com' });
+      const id2 = db.registerNode({ url: 'https://bare2.example.com', region: 'eu-west', owner: 'test@example.com' });
       
-      db.updateNodeStatus('node-1', 'healthy');
-      db.updateNodeStatus('node-2', 'unhealthy');
+      // Mark one as healthy, leave other as default
+      db.updateNodeHealth(id1, 'healthy', 100);
+      db.updateNodeHealth(id2, 'unhealthy', null);
       
       const healthy = db.getHealthyNodes();
       assert.strictEqual(healthy.length, 1);
-      assert.strictEqual(healthy[0].id, 'node-1');
+    });
+
+    it('should filter by region', () => {
+      const id1 = db.registerNode({ url: 'https://bare1.example.com', region: 'us-east', owner: 'test@example.com' });
+      const id2 = db.registerNode({ url: 'https://bare2.example.com', region: 'eu-west', owner: 'test@example.com' });
+      
+      db.updateNodeHealth(id1, 'healthy', 100);
+      db.updateNodeHealth(id2, 'healthy', 100);
+      
+      const usEast = db.getHealthyNodes('us-east');
+      assert.strictEqual(usEast.length, 1);
+      assert.strictEqual(usEast[0].region, 'us-east');
     });
   });
 
-  describe('updateNodeStatus', () => {
+  describe('updateNodeHealth', () => {
     it('should update node status', () => {
-      db.registerNode({ url: 'https://bare1.example.com', nodeId: 'node-1', region: 'us-east', version: '1.0.0' });
+      const id = db.registerNode({ url: 'https://bare1.example.com', region: 'us-east', owner: 'test@example.com' });
       
-      db.updateNodeStatus('node-1', 'healthy');
-      const node = db.getNode('node-1');
+      db.updateNodeHealth(id, 'healthy', 150);
+      const node = db.getNodeById(id);
       
       assert.strictEqual(node.status, 'healthy');
     });
+
+    it('should update latency', () => {
+      const id = db.registerNode({ url: 'https://bare1.example.com', region: 'us-east', owner: 'test@example.com' });
+      
+      db.updateNodeHealth(id, 'healthy', 150);
+      const node = db.getNodeById(id);
+      
+      assert.strictEqual(node.avg_latency, 150);
+    });
   });
 
-  describe('recordHeartbeat', () => {
+  describe('updateHeartbeat', () => {
     it('should update last heartbeat time', () => {
-      db.registerNode({ url: 'https://bare1.example.com', nodeId: 'node-1', region: 'us-east', version: '1.0.0' });
+      const id = db.registerNode({ url: 'https://bare1.example.com', region: 'us-east', owner: 'test@example.com' });
       
-      const before = db.getNode('node-1').last_heartbeat;
-      db.recordHeartbeat('node-1');
-      const after = db.getNode('node-1').last_heartbeat;
-      
-      assert.ok(after >= before || before === null);
+      const result = db.updateHeartbeat(id);
+      assert.strictEqual(result, true);
     });
   });
 
   describe('deleteNode', () => {
     it('should delete a node', () => {
-      db.registerNode({ url: 'https://bare1.example.com', nodeId: 'node-1', region: 'us-east', version: '1.0.0' });
+      const id = db.registerNode({ url: 'https://bare1.example.com', region: 'us-east', owner: 'test@example.com' });
       
-      db.deleteNode('node-1');
-      const node = db.getNode('node-1');
+      const deleted = db.deleteNode(id);
+      assert.strictEqual(deleted, true);
       
-      assert.strictEqual(node, null);
+      const node = db.getNodeById(id);
+      assert.strictEqual(node, undefined);
+    });
+
+    it('should return false for non-existent node', () => {
+      const deleted = db.deleteNode(99999);
+      assert.strictEqual(deleted, false);
     });
   });
 
-  describe('getNodesByRegion', () => {
-    it('should filter nodes by region', () => {
-      db.registerNode({ url: 'https://bare1.example.com', nodeId: 'node-1', region: 'us-east', version: '1.0.0' });
-      db.registerNode({ url: 'https://bare2.example.com', nodeId: 'node-2', region: 'us-east', version: '1.0.0' });
-      db.registerNode({ url: 'https://bare3.example.com', nodeId: 'node-3', region: 'eu-west', version: '1.0.0' });
+  describe('getRandomHealthyNode', () => {
+    it('should return a healthy node', () => {
+      const id = db.registerNode({ url: 'https://bare1.example.com', region: 'us-east', owner: 'test@example.com' });
+      db.updateNodeHealth(id, 'healthy', 100);
       
-      const usEast = db.getNodesByRegion('us-east');
-      assert.strictEqual(usEast.length, 2);
+      const node = db.getRandomHealthyNode();
+      assert.ok(node);
+      assert.strictEqual(node.url, 'https://bare1.example.com');
+    });
+
+    it('should return undefined when no healthy nodes', () => {
+      const id = db.registerNode({ url: 'https://bare1.example.com', region: 'us-east', owner: 'test@example.com' });
+      db.updateNodeHealth(id, 'unhealthy', null);
+      
+      const node = db.getRandomHealthyNode();
+      assert.strictEqual(node, undefined);
     });
   });
 
-  describe('getStats', () => {
-    it('should return statistics', () => {
-      db.registerNode({ url: 'https://bare1.example.com', nodeId: 'node-1', region: 'us-east', version: '1.0.0' });
-      db.updateNodeStatus('node-1', 'healthy');
+  describe('getNetworkStats', () => {
+    it('should return statistics object', () => {
+      db.registerNode({ url: 'https://bare1.example.com', region: 'us-east', owner: 'test@example.com' });
       
-      const stats = db.getStats();
+      const stats = db.getNetworkStats();
       assert.ok(stats);
-      assert.ok(typeof stats.total === 'number');
-      assert.ok(typeof stats.healthy === 'number');
+      assert.strictEqual(stats.totalNodes, 1);
+      assert.ok(typeof stats.healthyNodes === 'number');
+      assert.ok(typeof stats.unhealthyNodes === 'number');
+    });
+  });
+
+  describe('checkRateLimit', () => {
+    it('should allow requests within limit', () => {
+      const allowed = db.checkRateLimit('127.0.0.1', 5, 60);
+      assert.strictEqual(allowed, true);
+    });
+
+    it('should block requests exceeding limit', () => {
+      const ip = '192.168.1.1';
+      
+      // Make max attempts
+      for (let i = 0; i < 5; i++) {
+        db.checkRateLimit(ip, 5, 60);
+      }
+      
+      // Next one should be blocked
+      const allowed = db.checkRateLimit(ip, 5, 60);
+      assert.strictEqual(allowed, false);
+    });
+  });
+
+  describe('recordHealthCheck', () => {
+    it('should record health check result', () => {
+      const id = db.registerNode({ url: 'https://bare1.example.com', region: 'us-east', owner: 'test@example.com' });
+      
+      const result = db.recordHealthCheck(id, true, 150, null);
+      assert.ok(result);
     });
   });
 });

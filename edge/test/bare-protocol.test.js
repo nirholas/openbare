@@ -15,11 +15,19 @@ describe('Bare Protocol', () => {
       assert.ok(BareError);
     });
 
-    it('should create error with message', async () => {
+    it('should create error with status, code, and message', async () => {
       const { BareError } = await import('../src/bare-protocol.js');
-      const error = new BareError('Test error', 400);
+      const error = new BareError(400, 'INVALID_REQUEST', 'Test error');
       assert.strictEqual(error.message, 'Test error');
       assert.strictEqual(error.status, 400);
+      assert.strictEqual(error.code, 'INVALID_REQUEST');
+      assert.strictEqual(error.name, 'BareError');
+    });
+
+    it('should be instance of Error', async () => {
+      const { BareError } = await import('../src/bare-protocol.js');
+      const error = new BareError(500, 'SERVER_ERROR', 'Test');
+      assert.ok(error instanceof Error);
     });
   });
 
@@ -29,13 +37,36 @@ describe('Bare Protocol', () => {
       assert.ok(typeof parseBareHeaders === 'function');
     });
 
-    it('should parse X-Bare-URL header', async () => {
+    it('should parse X-Bare-URL header from request', async () => {
       const { parseBareHeaders } = await import('../src/bare-protocol.js');
       const headers = new Headers({
         'X-Bare-URL': 'https://example.com'
       });
-      const result = parseBareHeaders(headers);
-      assert.ok(result.url);
+      // parseBareHeaders expects a Request-like object with headers property
+      const mockRequest = { headers };
+      const result = parseBareHeaders(mockRequest);
+      assert.strictEqual(result.url, 'https://example.com');
+    });
+
+    it('should parse X-Bare-Headers as JSON', async () => {
+      const { parseBareHeaders } = await import('../src/bare-protocol.js');
+      const headers = new Headers({
+        'X-Bare-URL': 'https://example.com',
+        'X-Bare-Headers': JSON.stringify({ 'Content-Type': 'application/json' })
+      });
+      const mockRequest = { headers };
+      const result = parseBareHeaders(mockRequest);
+      assert.ok(result.headers);
+      assert.strictEqual(result.headers['Content-Type'], 'application/json');
+    });
+
+    it('should return empty object for missing optional headers', async () => {
+      const { parseBareHeaders } = await import('../src/bare-protocol.js');
+      const headers = new Headers();
+      const mockRequest = { headers };
+      const result = parseBareHeaders(mockRequest);
+      assert.ok(Array.isArray(result.forwardHeaders));
+      assert.ok(Array.isArray(result.passHeaders));
     });
   });
 

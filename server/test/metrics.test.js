@@ -23,27 +23,26 @@ describe('Metrics Module', () => {
   describe('recordRequest', () => {
     it('should increment total requests', () => {
       const before = getMetrics().requests.total;
-      recordRequest('GET', '/test');
+      recordRequest('GET');
       const after = getMetrics().requests.total;
       assert.strictEqual(after, before + 1);
     });
 
     it('should track by method', () => {
-      recordRequest('GET', '/test');
-      recordRequest('GET', '/test');
-      recordRequest('POST', '/test');
+      recordRequest('GET');
+      recordRequest('GET');
+      recordRequest('POST');
       const metrics = getMetrics();
-      assert.strictEqual(metrics.requests.byMethod.GET, 2);
-      assert.strictEqual(metrics.requests.byMethod.POST, 1);
+      assert.strictEqual(metrics.requests.by_method.GET, 2);
+      assert.strictEqual(metrics.requests.by_method.POST, 1);
     });
   });
 
   describe('recordResponse', () => {
     it('should record response latency', () => {
-      recordRequest('GET', '/test');
       recordResponse(200, 100);
       const metrics = getMetrics();
-      assert.ok(metrics.latency.count > 0);
+      assert.ok(metrics.latency.average_ms > 0);
     });
 
     it('should track by status code', () => {
@@ -51,8 +50,8 @@ describe('Metrics Module', () => {
       recordResponse(200, 100);
       recordResponse(404, 50);
       const metrics = getMetrics();
-      assert.strictEqual(metrics.requests.byStatus['2xx'], 2);
-      assert.strictEqual(metrics.requests.byStatus['4xx'], 1);
+      assert.strictEqual(metrics.requests.by_status['2xx'], 2);
+      assert.strictEqual(metrics.requests.by_status['4xx'], 1);
     });
   });
 

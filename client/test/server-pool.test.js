@@ -2,7 +2,7 @@
  * Server Pool Tests
  */
 
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import { ServerPool } from '../src/server-pool.js';
 
@@ -17,10 +17,18 @@ describe('ServerPool', () => {
     });
   });
 
+  afterEach(() => {
+    if (pool) {
+      pool.stopHealthChecks();
+      pool = null;
+    }
+  });
+
   describe('constructor', () => {
     it('should create pool with default options', () => {
       const p = new ServerPool();
       assert.ok(p);
+      p.stopHealthChecks();
     });
 
     it('should accept custom options', () => {
@@ -29,6 +37,7 @@ describe('ServerPool', () => {
         timeout: 10000
       });
       assert.ok(p);
+      p.stopHealthChecks();
     });
   });
 
@@ -75,21 +84,22 @@ describe('ServerPool', () => {
 
     it('should handle removing non-existent server', () => {
       pool.addServer('https://bare1.example.com');
-      pool.removeServer('https://nonexistent.com');
+      const result = pool.removeServer('https://nonexistent.com');
+      assert.strictEqual(result, false);
       const servers = pool.getAllServers();
       assert.strictEqual(servers.length, 1);
     });
   });
 
-  describe('getServer', () => {
+  describe('selectServer', () => {
     it('should return null when pool is empty', () => {
-      const server = pool.getServer();
+      const server = pool.selectServer();
       assert.strictEqual(server, null);
     });
 
     it('should return a server when available', () => {
       pool.addServer('https://bare1.example.com');
-      const server = pool.getServer();
+      const server = pool.selectServer();
       assert.ok(server);
       assert.strictEqual(server.url, 'https://bare1.example.com');
     });
@@ -110,31 +120,45 @@ describe('ServerPool', () => {
     });
   });
 
-  describe('markUnhealthy', () => {
-    it('should mark server as unhealthy', () => {
+  describe('reportSuccess', () => {
+    it('should update server latency', () => {
       pool.addServer('https://bare1.example.com');
-      pool.markUnhealthy('https://bare1.example.com');
+      pool.reportSuccess('https://bare1.example.com', 150);
       const servers = pool.getAllServers();
-      assert.strictEqual(servers[0].healthy, false);
+      assert.strictEqual(servers[0].latency, 150);
     });
-  });
 
-  describe('markHealthy', () => {
-    it('should mark server as healthy', () => {
+    it('should keep server healthy', () => {
       pool.addServer('https://bare1.example.com');
-      pool.markUnhealthy('https://bare1.example.com');
-      pool.markHealthy('https://bare1.example.com');
+      pool.reportSuccess('https://bare1.example.com', 100);
       const servers = pool.getAllServers();
       assert.strictEqual(servers[0].healthy, true);
     });
+
+    it('should increment success count', () => {
+      pool.addServer('https://bare1.example.com');
+      pool.reportSuccess('https://bare1.example.com', 100);
+      const servers = pool.getAllServers();
+      assert.strictEqual(servers[0].successCount, 1);
+    });
   });
 
-  describe('updateLatency', () => {
-    it('should update server latency', () => {
+  describe('reportFailure', () => {
+    it('should increment fail count', () => {
       pool.addServer('https://bare1.example.com');
-      pool.updateLatency('https://bare1.example.com', 150);
+      pool.reportFailure('https://bare1.example.com');
       const servers = pool.getAllServers();
-      assert.strictEqual(servers[0].latency, 150);
+      assert.strictEqual(servers[0].failCount, 1);
+    });
+
+    it('should mark server unhealthy after max failures', () => {
+      // Default maxFailures is 3
+      pool.addServer('https://bare1.example.com');
+      pool.reportFailure('https://bare1.example.com');
+      pool.reportFailure('https://bare1.example.com');
+      pool.reportFailure('https://bare1.example.com');
+      const servers = pool.getAllServers();
+      assert.strictEqual(servers[0].healthy, false);
     });
   });
 
@@ -152,6 +176,71 @@ describe('ServerPool', () => {
       assert.ok(servers[0].url);
       assert.ok(typeof servers[0].healthy === 'boolean');
       assert.ok(typeof servers[0].latency === 'number');
+      assert.ok(typeof servers[0].priority === 'number');
+      assert.ok(typeof servers[0].failCount === 'number');
+      assert.ok(typeof servers[0].successCount === 'number');
+    });
+  });
+
+  describe('getStats', () => {
+    it('should return stats object', () => {
+      pool.addServer('https://bare1.example.com');
+      const stats = pool.getStats();
+      assert.ok(typeof stats === 'object');
+      assert.strictEqual(stats.total, 1);
+      assert.strictEqual(stats.healthy, 1);
+      assert.strictEqual(stats.unhealthy, 0);
+    });
+
+    it('should track healthy and unhealthy counts', () => {
+      pool.addServer('https://bare1.example.com');
+      pool.addServer('https://bare2.example.com');
+      
+      // Mark one as unhealthy
+      pool.reportFailure('https://bare1.example.com');
+      pool.reportFailure('https://bare1.example.com');
+      pool.reportFailure('https://bare1.example.com');
+      
+      const stats = pool.getStats();
+      assert.strictEqual(stats.total, 2);
+      assert.strictEqual(stats.healthy, 1);
+      assert.strictEqual(stats.unhealthy, 1);
+    });
+  });
+
+  describe('setFallbackOrder', () => {
+    it('should update server priorities', () => {
+      pool.addServer('https://bare1.example.com');
+      pool.addServer('https://bare2.example.com');
+      
+      pool.setFallbackOrder([
+        'https://bare2.example.com',
+        'https://bare1.example.com'
+      ]);
+      
+      const servers = pool.getAllServers();
+      const server1 = servers.find(s => s.url === 'https://bare1.example.com');
+      const server2 = servers.find(s => s.url === 'https://bare2.example.com');
+      
+      assert.ok(server2.priority < server1.priority);
+    });
+  });
+
+  describe('getNextServer', () => {
+    it('should return server excluding specified URL', () => {
+      pool.addServer('https://bare1.example.com');
+      pool.addServer('https://bare2.example.com');
+      
+      const server = pool.getNextServer('https://bare1.example.com');
+      assert.ok(server);
+      assert.strictEqual(server.url, 'https://bare2.example.com');
+    });
+
+    it('should return null when no other servers available', () => {
+      pool.addServer('https://bare1.example.com');
+      
+      const server = pool.getNextServer('https://bare1.example.com');
+      assert.strictEqual(server, null);
     });
   });
 });

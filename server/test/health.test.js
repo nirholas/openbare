@@ -2,13 +2,12 @@
  * Health Module Tests
  */
 
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import {
-  getHealthReport,
   getHealthStatus,
   isHealthy,
-  selfTest
+  HealthStatus
 } from '../health.js';
 
 describe('Health Module', () => {
@@ -16,22 +15,21 @@ describe('Health Module', () => {
     it('should return health status object', () => {
       const status = getHealthStatus();
       assert.ok(status);
-      assert.ok(typeof status.healthy === 'boolean');
-      assert.ok(status.timestamp);
+      assert.ok(status.status);
       assert.ok(status.checks);
     });
 
-    it('should include memory check', () => {
+    it('should include checks object', () => {
       const status = getHealthStatus();
-      assert.ok(status.checks.memory);
-      assert.ok(typeof status.checks.memory.healthy === 'boolean');
-      assert.ok(typeof status.checks.memory.heapUsedMB === 'number');
+      assert.ok(typeof status.checks === 'object');
+      assert.ok(typeof status.checks.server === 'boolean');
+      assert.ok(typeof status.checks.memory === 'boolean');
     });
 
-    it('should include event loop check', () => {
+    it('should have valid status value', () => {
       const status = getHealthStatus();
-      assert.ok(status.checks.eventLoop);
-      assert.ok(typeof status.checks.eventLoop.healthy === 'boolean');
+      const validStatuses = [HealthStatus.HEALTHY, HealthStatus.DEGRADED, HealthStatus.UNHEALTHY];
+      assert.ok(validStatuses.includes(status.status));
     });
   });
 
@@ -47,28 +45,17 @@ describe('Health Module', () => {
     });
   });
 
-  describe('getHealthReport', () => {
-    it('should return detailed health report', () => {
-      const report = getHealthReport();
-      assert.ok(report);
-      assert.ok(report.status);
-      assert.ok(report.timestamp);
-      assert.ok(report.node);
-      assert.ok(report.checks);
+  describe('HealthStatus', () => {
+    it('should export health status constants', () => {
+      assert.ok(HealthStatus.HEALTHY);
+      assert.ok(HealthStatus.DEGRADED);
+      assert.ok(HealthStatus.UNHEALTHY);
     });
 
-    it('should include node info', () => {
-      const report = getHealthReport();
-      assert.ok(report.node.id);
-      assert.ok(report.node.version);
-    });
-  });
-
-  describe('selfTest', () => {
-    it('should perform self test', async () => {
-      const result = await selfTest();
-      assert.ok(result);
-      assert.ok(typeof result.success === 'boolean');
+    it('should have correct values', () => {
+      assert.strictEqual(HealthStatus.HEALTHY, 'healthy');
+      assert.strictEqual(HealthStatus.DEGRADED, 'degraded');
+      assert.strictEqual(HealthStatus.UNHEALTHY, 'unhealthy');
     });
   });
 });

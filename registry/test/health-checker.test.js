@@ -1,8 +1,11 @@
 /**
  * Health Checker Tests
+ * 
+ * Note: These tests verify the health-checker module structure.
+ * Full integration tests would require mocking database and network calls.
  */
 
-const { describe, it, beforeEach, mock } = require('node:test');
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert');
 
 describe('Health Checker', () => {
@@ -13,45 +16,54 @@ describe('Health Checker', () => {
     healthChecker = require('../health-checker.js');
   });
 
-  describe('checkNode', () => {
+  afterEach(() => {
+    // Clean up any running tasks
+    try {
+      healthChecker.stop();
+    } catch (e) {
+      // Ignore - might not have started
+    }
+  });
+
+  describe('checkNodeHealth', () => {
     it('should be a function', () => {
-      assert.ok(typeof healthChecker.checkNode === 'function');
+      assert.ok(typeof healthChecker.checkNodeHealth === 'function');
     });
 
-    it('should return result object', async () => {
-      // Mock would be needed for actual HTTP calls
-      // This is a structural test
-      assert.ok(true, 'Health check placeholder');
+    it('should return result object with expected properties', async () => {
+      // Test with a known unreachable URL
+      const result = await healthChecker.checkNodeHealth({
+        id: 1,
+        url: 'http://localhost:99999'
+      });
+      
+      assert.ok(typeof result === 'object');
+      assert.ok('healthy' in result);
+      assert.ok('latency' in result);
+      assert.ok('error' in result);
+      assert.strictEqual(result.healthy, false);
     });
   });
 
-  describe('checkAllNodes', () => {
+  describe('start', () => {
     it('should be a function', () => {
-      assert.ok(typeof healthChecker.checkAllNodes === 'function');
+      assert.ok(typeof healthChecker.start === 'function');
     });
   });
 
-  describe('startHealthCheckLoop', () => {
+  describe('stop', () => {
     it('should be a function', () => {
-      assert.ok(typeof healthChecker.startHealthCheckLoop === 'function');
-    });
-  });
-
-  describe('stopHealthCheckLoop', () => {
-    it('should be a function', () => {
-      assert.ok(typeof healthChecker.stopHealthCheckLoop === 'function');
+      assert.ok(typeof healthChecker.stop === 'function');
     });
 
     it('should not throw when called without starting', () => {
-      assert.doesNotThrow(() => healthChecker.stopHealthCheckLoop());
+      assert.doesNotThrow(() => healthChecker.stop());
     });
   });
 
-  describe('getHealthCheckStats', () => {
-    it('should return statistics object', () => {
-      const stats = healthChecker.getHealthCheckStats();
-      assert.ok(stats);
-      assert.ok(typeof stats === 'object');
+  describe('runOnce', () => {
+    it('should be a function', () => {
+      assert.ok(typeof healthChecker.runOnce === 'function');
     });
   });
 });
@@ -60,7 +72,7 @@ describe('Health Check Logic', () => {
   describe('timeout handling', () => {
     it('should have configurable timeout', () => {
       // Default timeout should be reasonable (5-10 seconds)
-      const DEFAULT_TIMEOUT = 5000;
+      const DEFAULT_TIMEOUT = 10000;
       assert.ok(DEFAULT_TIMEOUT > 0);
       assert.ok(DEFAULT_TIMEOUT <= 30000);
     });
