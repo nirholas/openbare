@@ -2,9 +2,9 @@
  * Registry API Tests
  */
 
-const { describe, it, before, after, beforeEach } = require('node:test');
+const { describe, it } = require('node:test');
 const assert = require('node:assert');
-const http = require('http');
+// const http = require('http'); // Unused - would be used with actual HTTP testing
 
 // Note: These tests would ideally use supertest, but we'll use native http
 // In production, you'd add supertest as a dev dependency

@@ -166,7 +166,9 @@ function getRequestsPerMinute() {
  * Get average latency
  */
 function getAverageLatency() {
-  if (metrics.latency.count === 0) return 0;
+  if (metrics.latency.count === 0) {
+    return 0;
+  }
   return Math.round(metrics.latency.total / metrics.latency.count);
 }
 

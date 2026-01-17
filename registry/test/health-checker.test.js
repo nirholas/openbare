@@ -20,7 +20,7 @@ describe('Health Checker', () => {
     // Clean up any running tasks
     try {
       healthChecker.stop();
-    } catch (e) {
+    } catch (_e) {
       // Ignore - might not have started
     }
   });

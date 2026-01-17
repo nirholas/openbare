@@ -98,7 +98,7 @@ export function decodeHeaders(headerString) {
  * @param {string} targetUrl - Target URL to proxy
  * @returns {string} Full bare request URL
  */
-export function createBareUrl(baseUrl, targetUrl) {
+export function createBareUrl(baseUrl, _targetUrl) {
   const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   return `${base}/v3/`;
 }

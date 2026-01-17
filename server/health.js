@@ -71,7 +71,7 @@ function checkEventLoop() {
 export async function selfTest(bareServer, logger) {
   try {
     // Check if bare server is routing correctly
-    const testRequest = {
+    const _testRequest = {
       method: 'GET',
       url: '/bare/',
       headers: {}

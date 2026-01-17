@@ -8,7 +8,7 @@ import { parseBareHeaders, buildTargetUrl, BareError } from './bare-protocol.js'
 /**
  * Handle WebSocket upgrade request
  */
-export async function handleWebSocketUpgrade(request, env) {
+export async function handleWebSocketUpgrade(request, _env) {
   try {
     // Parse bare headers to get target WebSocket URL
     const bareData = parseBareHeaders(request);
@@ -25,7 +25,7 @@ export async function handleWebSocketUpgrade(request, env) {
     server.accept();
 
     // Connect to target WebSocket
-    const targetWs = await connectToTarget(wsUrl.toString(), bareData.headers, server);
+    const _targetWs = await connectToTarget(wsUrl.toString(), bareData.headers, server);
 
     return new Response(null, {
       status: 101,
@@ -70,7 +70,7 @@ async function connectToTarget(targetUrl, headers, clientWs) {
       // Skip hop-by-hop headers
       const lowerKey = key.toLowerCase();
       if (['host', 'connection', 'upgrade', 'sec-websocket-key', 
-           'sec-websocket-version', 'sec-websocket-extensions'].includes(lowerKey)) {
+        'sec-websocket-version', 'sec-websocket-extensions'].includes(lowerKey)) {
         continue;
       }
       wsHeaders[key] = value;
@@ -87,7 +87,7 @@ async function connectToTarget(targetUrl, headers, clientWs) {
     });
 
     // Handle target connection error
-    targetWs.addEventListener('error', (event) => {
+    targetWs.addEventListener('error', (_event) => {
       clientWs.close(1011, 'Target connection failed');
       reject(new Error('Failed to connect to target WebSocket'));
     });
@@ -127,7 +127,7 @@ async function connectToTarget(targetUrl, headers, clientWs) {
     });
 
     // Handle client connection error
-    clientWs.addEventListener('error', (event) => {
+    clientWs.addEventListener('error', (_event) => {
       if (targetWs.readyState === WebSocket.OPEN) {
         targetWs.close(1011, 'Client error');
       }
@@ -154,7 +154,7 @@ export class WebSocketHandler {
   }
 
   async fetch(request) {
-    const url = new URL(request.url);
+    const _url = new URL(request.url);
 
     if (request.headers.get('upgrade')?.toLowerCase() === 'websocket') {
       return this.handleWebSocket(request);
@@ -163,10 +163,10 @@ export class WebSocketHandler {
     return new Response('Expected WebSocket', { status: 426 });
   }
 
-  async handleWebSocket(request) {
-    const pair = new WebSocketPair();
-    const [client, server] = Object.values(pair);
-
+  /**
+   * Handle WebSocket connection
+   */
+  async handleWebSocket(_request) {
     server.accept();
     
     const sessionId = crypto.randomUUID();
@@ -192,7 +192,9 @@ export class WebSocketHandler {
 
   async handleMessage(sessionId, data) {
     const session = this.sessions.get(sessionId);
-    if (!session) return;
+    if (!session) {
+      return;
+    }
 
     // Parse message - could be binary or text
     try {
@@ -219,7 +221,7 @@ export class WebSocketHandler {
  * Simple WebSocket proxy without Durable Objects
  * For use when Durable Objects are not needed/available
  */
-export async function simpleWebSocketProxy(request, targetUrl, headers = {}) {
+export async function simpleWebSocketProxy(request, targetUrl, _headers = {}) {
   // Upgrade header check
   const upgradeHeader = request.headers.get('Upgrade');
   if (!upgradeHeader || upgradeHeader.toLowerCase() !== 'websocket') {

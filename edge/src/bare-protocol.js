@@ -27,7 +27,7 @@ function parseBareHeaders(request) {
   if (bareHeadersRaw) {
     try {
       bareHeaders = JSON.parse(bareHeadersRaw);
-    } catch (e) {
+    } catch (_e) {
       throw new BareError(400, 'INVALID_BARE_HEADERS', 'x-bare-headers is not valid JSON');
     }
   }
@@ -37,7 +37,7 @@ function parseBareHeaders(request) {
   if (bareForwardHeaders) {
     try {
       forwardHeaders = JSON.parse(bareForwardHeaders);
-    } catch (e) {
+    } catch (_e) {
       forwardHeaders = bareForwardHeaders.split(',').map(h => h.trim());
     }
   }
@@ -47,7 +47,7 @@ function parseBareHeaders(request) {
   if (barePassHeaders) {
     try {
       passHeaders = JSON.parse(barePassHeaders);
-    } catch (e) {
+    } catch (_e) {
       passHeaders = barePassHeaders.split(',').map(h => h.trim());
     }
   }
@@ -57,7 +57,7 @@ function parseBareHeaders(request) {
   if (barePassStatus) {
     try {
       passStatus = JSON.parse(barePassStatus);
-    } catch (e) {
+    } catch (_e) {
       passStatus = barePassStatus.split(',').map(s => parseInt(s.trim(), 10));
     }
   }
@@ -83,7 +83,7 @@ function buildTargetUrl(bareData) {
   if (bareData.url) {
     try {
       return new URL(bareData.url);
-    } catch (e) {
+    } catch (_e) {
       throw new BareError(400, 'INVALID_BARE_URL', 'x-bare-url is not a valid URL');
     }
   }
@@ -94,7 +94,7 @@ function buildTargetUrl(bareData) {
     const urlStr = `${bareData.protocol}//${bareData.host}${port}${bareData.path}`;
     try {
       return new URL(urlStr);
-    } catch (e) {
+    } catch (_e) {
       throw new BareError(400, 'INVALID_BARE_COMPONENTS', 'Cannot construct valid URL from bare components');
     }
   }

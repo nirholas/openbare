@@ -6,7 +6,7 @@
 import { ServerPool } from './server-pool.js';
 import { bareFetch, BareError } from './bare-fetch.js';
 import { Discovery } from './discovery.js';
-import * as codec from './codec.js';
+// import * as codec from './codec.js'; // Available for URL encoding utilities
 
 /**
  * @typedef {Object} OpenBareClientOptions
@@ -194,8 +194,12 @@ export class OpenBareClient {
       .map(([url, result]) => ({ url, ...result }))
       .sort((a, b) => {
         // Put failures at the end
-        if (!a.ok && b.ok) return 1;
-        if (a.ok && !b.ok) return -1;
+        if (!a.ok && b.ok) {
+          return 1;
+        }
+        if (a.ok && !b.ok) {
+          return -1;
+        }
         // Sort by latency
         return a.latency - b.latency;
       });

@@ -137,7 +137,7 @@ function handleHealth(request, env) {
 /**
  * Bare server info endpoint
  */
-function handleBareInfo(request) {
+function handleBareInfo(_request) {
   return new Response(JSON.stringify({
     versions: ['v1', 'v2', 'v3'],
     language: 'Cloudflare Workers',
@@ -160,9 +160,9 @@ function handleBareInfo(request) {
 /**
  * Handle Bare v3 requests
  */
-async function handleBareV3(request, env, ctx) {
+async function handleBareV3(request, env, _ctx) {
   const url = new URL(request.url);
-  const subpath = url.pathname.replace('/bare/v3/', '');
+  const _subpath = url.pathname.replace('/bare/v3/', '');
 
   // WebSocket upgrade
   if (request.headers.get('upgrade')?.toLowerCase() === 'websocket') {
@@ -176,7 +176,7 @@ async function handleBareV3(request, env, ctx) {
 /**
  * Handle legacy bare requests
  */
-async function handleBare(request, env, ctx) {
+async function handleBare(request, env, _ctx) {
   // WebSocket upgrade
   if (request.headers.get('upgrade')?.toLowerCase() === 'websocket') {
     return handleWebSocketUpgrade(request, env);

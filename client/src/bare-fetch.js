@@ -111,14 +111,18 @@ export async function bareFetch(bareServer, targetUrl, options = {}) {
       
       // Helper methods to match fetch Response API
       async text() {
-        if (!response.body) return '';
+        if (!response.body) {
+          return '';
+        }
         const reader = response.body.getReader();
         const chunks = [];
         let done = false;
         while (!done) {
           const result = await reader.read();
           done = result.done;
-          if (result.value) chunks.push(result.value);
+          if (result.value) {
+            chunks.push(result.value);
+          }
         }
         const combined = new Uint8Array(chunks.reduce((acc, c) => acc + c.length, 0));
         let offset = 0;
@@ -135,14 +139,18 @@ export async function bareFetch(bareServer, targetUrl, options = {}) {
       },
       
       async arrayBuffer() {
-        if (!response.body) return new ArrayBuffer(0);
+        if (!response.body) {
+          return new ArrayBuffer(0);
+        }
         const reader = response.body.getReader();
         const chunks = [];
         let done = false;
         while (!done) {
           const result = await reader.read();
           done = result.done;
-          if (result.value) chunks.push(result.value);
+          if (result.value) {
+            chunks.push(result.value);
+          }
         }
         const combined = new Uint8Array(chunks.reduce((acc, c) => acc + c.length, 0));
         let offset = 0;

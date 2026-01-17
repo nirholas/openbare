@@ -153,7 +153,9 @@ export class Discovery {
    */
   getNodesWithFeatures(features) {
     return this.#nodes.filter(node => {
-      if (!node.features) return false;
+      if (!node.features) {
+        return false;
+      }
       return features.every(f => node.features.includes(f));
     });
   }
@@ -211,7 +213,9 @@ export class Discovery {
    * @returns {number} Milliseconds since last fetch
    */
   getTimeSinceLastFetch() {
-    if (this.#lastFetch === 0) return Infinity;
+    if (this.#lastFetch === 0) {
+      return Infinity;
+    }
     return Date.now() - this.#lastFetch;
   }
 
@@ -248,8 +252,12 @@ export class Discovery {
    * @returns {boolean} Whether node is valid
    */
   #isValidNode(node) {
-    if (!node || typeof node !== 'object') return false;
-    if (!node.url || typeof node.url !== 'string') return false;
+    if (!node || typeof node !== 'object') {
+      return false;
+    }
+    if (!node.url || typeof node.url !== 'string') {
+      return false;
+    }
     
     try {
       new URL(node.url);

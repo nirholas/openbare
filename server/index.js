@@ -172,7 +172,7 @@ app.get('/', async (req, res) => {
 app.get('/health', async (req, res) => {
   const report = await getHealthReport(bareServer, logger, config);
   const statusCode = report.status === 'healthy' ? 200 : 
-                     report.status === 'degraded' ? 200 : 503;
+    report.status === 'degraded' ? 200 : 503;
   
   res.status(statusCode).json(report);
 });
@@ -221,7 +221,7 @@ app.get('/info', (req, res) => {
 /**
  * Error handler
  */
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   logger.error({ error: err.message, stack: err.stack }, 'Unhandled error');
   recordError('unhandled_error');
   
@@ -262,7 +262,9 @@ httpServer.on('upgrade', (req, socket, head) => {
 let isShuttingDown = false;
 
 async function gracefulShutdown(signal) {
-  if (isShuttingDown) return;
+  if (isShuttingDown) {
+    return;
+  }
   isShuttingDown = true;
   
   logger.info({ signal }, 'Received shutdown signal, starting graceful shutdown...');

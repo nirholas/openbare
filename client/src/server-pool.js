@@ -116,7 +116,9 @@ export class ServerPool {
       // Consider server healthy if:
       // 1. It's marked healthy, OR
       // 2. Enough time has passed since last failure (recovery time)
-      if (server.healthy) return true;
+      if (server.healthy) {
+        return true;
+      }
       
       if (now - server.lastCheck > this.#options.recoveryTime) {
         // Give it another chance
@@ -318,8 +320,12 @@ export class ServerPool {
    */
   #selectFastest(servers) {
     return servers.reduce((best, server) => {
-      if (server.latency < best.latency) return server;
-      if (server.latency === best.latency && server.priority < best.priority) return server;
+      if (server.latency < best.latency) {
+        return server;
+      }
+      if (server.latency === best.latency && server.priority < best.priority) {
+        return server;
+      }
       return best;
     });
   }
