@@ -18,10 +18,10 @@
     "test:server": "npm test -w server",
     "test:client": "npm test -w client",
     "test:registry": "npm test -w registry",
-    "lint": "eslint . --ext .js",
-    "lint:fix": "eslint . --ext .js --fix",
-    "format": "prettier --write \"**/*.{js,json,md}\"",
-    "format:check": "prettier --check \"**/*.{js,json,md}\""
+    "lint": "npx eslint .",
+    "lint:fix": "npx eslint . --fix",
+    "format": "npx prettier --write \"**/*.{js,json,md}\"",
+    "format:check": "npx prettier --check \"**/*.{js,json,md}\""
   },
   "keywords": [
     "proxy",
