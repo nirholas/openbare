@@ -1,5 +1,5 @@
 <div align="center">
-
+ 
 # 🌐 OpenBare
 
 ### A decentralized, censorship-resistant web proxy network
