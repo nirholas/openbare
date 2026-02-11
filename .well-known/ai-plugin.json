@@ -1,0 +1,16 @@
+{
+    "schema_version": "v1",
+    "name_for_human": "openbare",
+    "name_for_model": "openbare",
+    "description_for_human": "Decentralized web proxy network designed for censorship resistance, high availability. Deploy nodes on Vercel, Railway, Cloudflare Workers in seconds.  Use community-maintained public nodes. Features automatic failover between nodes, <50ms edge latency, built-in health monitoring, full compatibility with Ultraviolet, other TompHTTP clients.",
+    "description_for_model": "Decentralized web proxy network designed for censorship resistance, high availability. Deploy nodes on Vercel, Railway, Cloudflare Workers in seconds.  Use community-maintained public nodes. Features automatic failover between nodes, <50ms edge latency, built-in health monitoring, full compatibility with Ultraviolet, other TompHTTP clients.",
+    "auth": {
+        "type": "none"
+    },
+    "api": {
+        "type": "none"
+    },
+    "logo_url": "https://github.com/nirholas.png",
+    "contact_email": "nirholas@users.noreply.github.com",
+    "legal_info_url": "https://github.com/nirholas/openbare/blob/main/LICENSE"
+}

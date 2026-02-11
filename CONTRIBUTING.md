@@ -144,3 +144,7 @@ Be respectful and inclusive. We follow the [Contributor Covenant](https://www.co
 - Ask in issues
 
 Thank you for contributing! 🎉
+
+## Code of Conduct
+
+Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
