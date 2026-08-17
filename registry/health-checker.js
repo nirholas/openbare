@@ -22,12 +22,33 @@ let isRunning = false;
  * @param {Object} node - Node object with id and url
  * @returns {Object} - { healthy: boolean, latency: number|null, error: string|null }
  */
+// SSRF protection: block private/internal network addresses
+function isPrivateHost(hostname) {
+  const privatePatterns = [
+    /^localhost$/i,
+    /^127\./,
+    /^10\./,
+    /^172\.(1[6-9]|2\d|3[01])\./,
+    /^192\.168\./,
+    /^169\.254\./,
+    /^::1$/,
+    /^fc00:/i,
+    /^fe80:/i
+  ];
+  return privatePatterns.some(p => p.test(hostname));
+}
+
 async function checkNodeHealth(node) {
   const startTime = Date.now();
     
   try {
     // Validate URL format
     const url = new URL(node.url);
+
+    // SSRF protection: only allow http/https and block private/internal hosts
+    if (!['http:', 'https:'].includes(url.protocol) || isPrivateHost(url.hostname)) {
+      return { healthy: false, latency: null, error: 'Invalid or blocked URL' };
+    }
         
     // Make request to node's root or health endpoint
     const controller = new AbortController();
