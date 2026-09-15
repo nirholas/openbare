@@ -43,6 +43,17 @@ describe('Health Checker', () => {
       assert.ok('error' in result);
       assert.strictEqual(result.healthy, false);
     });
+
+    it('should block a private-address target before opening a socket (SSRF protection)', async () => {
+      const result = await healthChecker.checkNodeHealth({
+        id: 1,
+        url: 'http://127.0.0.1:9/'
+      });
+
+      assert.strictEqual(result.healthy, false);
+      assert.notStrictEqual(result.error, 'Connection refused');
+      assert.match(result.error, /non-public address/);
+    });
   });
 
   describe('start', () => {
