@@ -27,7 +27,7 @@
   "author": "SPA-OS",
   "license": "SEE LICENSE IN LICENSE",
   "devDependencies": {
-    "wrangler": "^3.22.0",
+    "wrangler": "^4.149.0",
     "eslint": "^8.56.0"
   },
   "engines": {
