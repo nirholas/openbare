@@ -5,6 +5,7 @@
 
 const cron = require('node-cron');
 const db = require('./db');
+const { safeFetch } = require('./safe-fetch');
 
 // Configuration
 const CHECK_INTERVAL_SECONDS = 30;
@@ -24,25 +25,18 @@ let isRunning = false;
  */
 async function checkNodeHealth(node) {
   const startTime = Date.now();
-    
+
   try {
-    // Validate URL format
-    const url = new URL(node.url);
-        
-    // Make request to node's root or health endpoint
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS);
-        
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      signal: controller.signal,
+    // SSRF protection: resolve and validate the actual address used for the
+    // connection (and every redirect hop), not just the hostname string -
+    // see safe-fetch.js.
+    const response = await safeFetch(node.url, {
+      timeoutMs: HEALTH_CHECK_TIMEOUT_MS,
       headers: {
         'User-Agent': 'OpenBare-Registry-HealthChecker/1.0'
       }
     });
-        
-    clearTimeout(timeout);
-        
+
     const latency = Date.now() - startTime;
         
     // Consider 2xx and 3xx as healthy
@@ -65,7 +59,11 @@ async function checkNodeHealth(node) {
     const latency = Date.now() - startTime;
         
     let errorMessage = 'Unknown error';
-    if (error.name === 'AbortError') {
+    if (error.code === 'ERR_SSRF_BLOCKED') {
+      errorMessage = 'Blocked: target resolves to a non-public address';
+    } else if (error.code === 'ERR_TOO_MANY_REDIRECTS') {
+      errorMessage = 'Blocked: too many redirects';
+    } else if (error.name === 'AbortError') {
       errorMessage = 'Request timeout';
     } else if (error.code === 'ECONNREFUSED') {
       errorMessage = 'Connection refused';
