@@ -1,0 +1,21 @@
+{
+  "name": "openbare",
+  "owner": {
+    "name": "nirholas"
+  },
+  "description": "Run an OpenBare proxy node or use the failover client and registry API of the censorship-resistant proxy network.",
+  "plugins": [
+    {
+      "name": "openbare-network",
+      "source": "./plugins/openbare-network",
+      "description": "Run an OpenBare proxy node or use the failover client and registry API of the censorship-resistant proxy network.",
+      "category": "automation",
+      "tags": [
+        "proxy",
+        "censorship-resistance",
+        "bare-server",
+        "failover"
+      ]
+    }
+  ]
+}

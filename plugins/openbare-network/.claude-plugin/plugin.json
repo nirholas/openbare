@@ -1,0 +1,16 @@
+{
+  "name": "openbare-network",
+  "version": "1.0.0",
+  "description": "Run an OpenBare proxy node or use the failover client and registry API of the censorship-resistant proxy network.",
+  "author": {
+    "name": "nirholas"
+  },
+  "repository": "https://github.com/nirholas/openbare",
+  "homepage": "https://openbare.xyz",
+  "keywords": [
+    "proxy",
+    "censorship-resistance",
+    "bare-server",
+    "failover"
+  ]
+}
